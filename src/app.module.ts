@@ -7,6 +7,7 @@ import { UserModule } from './user/user.module';
 import { MessageModule } from './message/message.module';
 import { User } from './user/entities/user.entity';
 import { Message } from './message/entities/message.entity';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
  
@@ -22,7 +23,8 @@ import { Message } from './message/entities/message.entity';
     synchronize: false,
   }),
   UserModule,
-  MessageModule],
+  MessageModule,
+  AuthModule],
   controllers: [AppController],
   providers: [AppService],
 })

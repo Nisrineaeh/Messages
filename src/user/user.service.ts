@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -44,20 +44,48 @@ export class UserService {
     return await this.userRepository.findOne({where:{id:id}});
   }
 
+  async findByUsername(username: string): Promise<User> {
+    return await this.userRepository.findOne({ where: { username } });
+  }
+
 
   async findAll(): Promise<User[]> {
     return await this.userRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: number) {
+    const user = await this.userRepository.findOne({ where: { id: id } });
+    if (!user) throw new NotFoundException(`L'utilisateur ID n° ${id} n'existe pas !`);
+    return user;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: number, updateUserDto: UpdateUserDto): Promise < User > {
+      const userToUpDate = await this.findOne(id);
+      Object.assign(userToUpDate, updateUserDto);
+      return await this.userRepository.save(userToUpDate);
+    }
+
+
+  async remove(id: any): Promise<void> {
+    try {
+      const user = await this.userRepository.findOne({ where: { id: id } });
+      if (!user) {
+        throw new NotFoundException(`L'utilisateur avec l'ID ${id} n'a pas été trouvé.`);
+      }
+      await this.userRepository.remove(user);
+      console.log('Utilisateur supprimé avec succès :', user);
+    } catch (error) {
+      console.error('Erreur lors de la suppression de l\'utilisateur :', error);
+      throw new InternalServerErrorException('Une erreur est survenue lors de la suppression de l\'utilisateur.');
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async verifierConnexion(username: string, password: string): Promise<boolean> {
+    const user = await this.userRepository.findOne({ where: { username: username } });
+    if (user) {
+      const match = await bcrypt.compare(password, user.password);
+      return match;
+    }
+    return false;
   }
 }
